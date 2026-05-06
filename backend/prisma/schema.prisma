@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model admin {
+  id_admin   Int        @id @default(autoincrement())
+  nama       String?    @db.VarChar(100)
+  email      String?    @db.VarChar(100)
+  password   String?
+  created_at DateTime?  @default(now()) @db.Timestamp(6)
+  schedule   schedule[]
+}
+
+model antrian {
+  id_antrian       Int            @id @default(autoincrement())
+  id_registration  Int?
+  status_antrian   String?        @db.VarChar(20)
+  waktu_ambil      DateTime?      @db.Timestamp(6)
+  waktu_verifikasi DateTime?      @db.Timestamp(6)
+  waktu_admis      DateTime?      @db.Timestamp(6)
+  waktu_poli       DateTime?      @db.Timestamp(6)
+  waktu_farmasi    DateTime?      @db.Timestamp(6)
+  waktu_kasir      DateTime?      @db.Timestamp(6)
+  created_at       DateTime?      @default(now()) @db.Timestamp(6)
+  registrations    registrations? @relation(fields: [id_registration], references: [id_registration], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model doctor {
+  id_doctor    Int        @id @default(autoincrement())
+  nama_dokter  String     @db.VarChar(100)
+  gelar        String?    @db.VarChar(50)
+  spesialisasi String?    @db.VarChar(100)
+  no_str       String?    @db.VarChar(50)
+  foto         String?    @db.VarChar(255)
+  is_active    Boolean    @default(true) // true = aktif, false = non aktif
+  created_at   DateTime?  @default(now()) @db.Timestamp(6)
+  schedule     schedule[]
+}
+
+model insurance {
+  id_insurance  Int             @id @default(autoincrement())
+  nama_asuransi String?         @db.VarChar(50)
+  registrations registrations[]
+}
+
+model patient {
+  id_patient    Int             @id @default(autoincrement())
+  id_users      Int?            @unique
+  nama_lengkap  String?         @db.VarChar(100)
+  ttl           String?         @db.VarChar(100)
+  alamat        String?
+  jenis_kelamin String?         @db.VarChar(10)
+  nik           String?         @db.VarChar(30)
+  no_hp         String?         @db.VarChar(20)
+  created_at    DateTime?       @default(now()) @db.Timestamp(6)
+  update_at     DateTime?       @db.Timestamp(6)
+  deleted       DateTime?       @db.Timestamp(6)
+  users         users?          @relation(fields: [id_users], references: [id_users], onDelete: NoAction, onUpdate: NoAction)
+  registrations registrations[]
+}
+
+model registrations {
+  id_registration Int        @id @default(autoincrement())
+  id_patient      Int?
+  id_schedule     Int?
+  id_insurance    Int?
+  keluhan         String?    @db.Text
+  kode_booking    String?    @db.VarChar(20)
+  no_antrian      String?    @db.VarChar(10)
+  status          String?    @db.VarChar(20)
+  no_bpjs String? 
+  reschedule_note String?  @db.Text
+  old_schedule_id  Int?
+  new_schedule_id  Int?
+  created_at      DateTime?  @default(now()) @db.Timestamp(6)
+  antrian         antrian[]
+  insurance       insurance? @relation(fields: [id_insurance], references: [id_insurance], onDelete: NoAction, onUpdate: NoAction)
+  patient         patient?   @relation(fields: [id_patient], references: [id_patient], onDelete: NoAction, onUpdate: NoAction)
+  schedule        schedule?  @relation(fields: [id_schedule], references: [id_schedule], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model room {
+  id_room    Int        @id @default(autoincrement())
+  nama_room  String?    @db.VarChar(100)
+  lantai     Int?
+  keterangan String?
+  schedule   schedule[]
+}
+
+model schedule {
+  id_schedule   Int             @id @default(autoincrement())
+  id_doctor     Int
+  id_room       Int?
+  tanggal       DateTime?       @db.Date
+  jam_mulai     DateTime?       @db.Time(6)
+  jam_selesai   DateTime?       @db.Time(6)
+  shift         String?         @db.VarChar(1) // A / B
+  status        String?         @default("ACTIVE") @db.VarChar(20)
+  kuota_umum    Int?
+  kuota_bpjs    Int?
+  is_recurring  Boolean         @default(false)
+  created_by    Int?
+  created_at    DateTime?       @default(now()) @db.Timestamp(6)
+  registrations registrations[]
+  admin         admin?          @relation(fields: [created_by], references: [id_admin], onDelete: NoAction, onUpdate: NoAction)
+  doctor        doctor          @relation(fields: [id_doctor], references: [id_doctor], onDelete: NoAction, onUpdate: NoAction)
+  room          room?           @relation(fields: [id_room], references: [id_room], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model users {
+  id_users     Int       @id @default(autoincrement())
+  uid          String?   @unique @default(uuid())
+  nama_lengkap String?   @db.VarChar(100)
+  email        String    @unique @db.VarChar(100)
+  password     String
+  no_hp        String?   @db.VarChar(20)
+  role          String  @default("user")
+  created_at   DateTime? @default(now()) @db.Timestamp(6)
+  updated_at   DateTime? @db.Timestamp(6)
+  deleted_at   DateTime? @db.Timestamp(6)
+  patient      patient?
+}
