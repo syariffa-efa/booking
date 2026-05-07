@@ -70,7 +70,7 @@ model registrations {
   id_schedule     Int?
   id_insurance    Int?
   keluhan         String?    @db.Text
-  kode_booking    String?    @db.VarChar(20)
+  kode_booking    String?    @unique  @db.VarChar(50)
   no_antrian      String?    @db.VarChar(10)
   status          String?    @db.VarChar(20)
   no_bpjs String? 

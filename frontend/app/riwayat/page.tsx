@@ -3,30 +3,46 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
 
 export default function RiwayatPage() {
   const router = useRouter();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchRiwayat = async () => {
+    try {
+      setLoading(true);
+
+      const res = await api.get("/registrations/riwayat", {
+        withCredentials: true,
+      });
+
+      setData(res.data || []);
+    } catch (err) {
+      console.log("Error riwayat:", err);
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchRiwayat = async () => {
-      try {
-        const res = await api.get("/registrations/riwayat");
-        console.log("RESPON:", res.data);
-        setData(res.data || []);
-
-      } catch (err) {
-        console.log("Error riwayat:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchRiwayat();
   }, []);
+
+  // CANCEL BOOKING
+  const handleCancel = async (id: number) => {
+    try {
+      await api.put(`/registrations/cancel/${id}`, null, {
+        withCredentials: true,
+      });
+
+      // refresh data setelah cancel
+      fetchRiwayat();
+    } catch (err) {
+      console.log("Cancel error:", err);
+    }
+  };
 
   const getColor = (status: string) => {
     switch (status) {
@@ -44,39 +60,70 @@ export default function RiwayatPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen bg-gray-100 py-6">
 
-      <main className="flex-1 p-4 space-y-4">
+      <div className="max-w-4xl mx-auto px-4">
 
-        <h1 className="text-xl font-bold">Riwayat Booking</h1>
+        {/* TITLE */}
+        <h1 className="text-2xl font-bold mb-6">Riwayat Booking</h1>
 
-        {loading ? (
-          <p>Loading...</p>
-        ) : data.length === 0 ? (
-          <p className="text-gray-500">Belum ada riwayat booking</p>
-        ) : (
-          data.map((b) => (
+        {/* LOADING */}
+        {loading && (
+          <p className="text-gray-500">Loading...</p>
+        )}
+
+        {/* EMPTY */}
+        {!loading && data.length === 0 && (
+          <div className="bg-white p-6 rounded-xl text-center text-gray-500">
+            Belum ada riwayat booking
+          </div>
+        )}
+
+        {/* LIST */}
+        <div className="space-y-4">
+
+          {data.map((b) => (
             <div
               key={b.id_registration}
-              className="bg-white border rounded-xl p-4 shadow"
+              className="bg-white rounded-2xl shadow-md p-5 border hover:shadow-lg transition"
             >
+
+              {/* HEADER */}
               <div className="flex justify-between items-start">
 
                 <div>
-                  <h2 className="font-bold">
-                    {b.schedule?.doctor?.name || "Dokter"}
-                  </h2>
+                <h2 className="text-lg font-bold text-gray-800">
+  {b.schedule?.doctor?.nama_dokter || "Dokter"}
+</h2>
+
+<p className="text-sm text-gray-500">
+  📅 {b.schedule?.tanggal
+    ? new Date(b.schedule.tanggal).toLocaleDateString("id-ID")
+    : "-"}
+</p>
+
+<p className="text-sm text-gray-500">
+  🏥 Ruangan:{" "}
+  {b.schedule?.room
+    ? `${b.schedule.room.nama_room} - Lantai ${b.schedule.room.lantai}`
+    : "-"}
+</p>
+
                   <p className="text-sm text-gray-500">
-                    {b.schedule?.date}
+                    🎫 No Antrian:{" "}
+                    <span className="font-semibold text-black">
+                      {b.no_antrian}
+                    </span>
                   </p>
 
-                  <p className="text-sm">
-                    No Antrian: {b.no_antrian}
+                  <p className="text-sm text-gray-500">
+                    🔖 Kode: {b.kode_booking}
                   </p>
                 </div>
 
+                {/* STATUS */}
                 <span
-                  className={`text-white px-3 py-1 rounded text-xs ${getColor(
+                  className={`text-white px-3 py-1 rounded-full text-xs font-semibold ${getColor(
                     b.status
                   )}`}
                 >
@@ -87,39 +134,44 @@ export default function RiwayatPage() {
 
               {/* RESCHEDULE INFO */}
               {b.status === "RESCHEDULED" && (
-                <div className="mt-2 text-sm text-yellow-600">
+                <div className="mt-3 text-sm text-yellow-600 bg-yellow-50 p-2 rounded">
                   ⚠ {b.reschedule_note || "Jadwal telah diubah"}
                 </div>
               )}
 
-              <div className="flex gap-2 mt-3">
+              {/* ACTION BUTTONS */}
+              <div className="flex gap-3 mt-4">
 
+                {/* LIHAT ANTRIAN */}
                 <button
                   onClick={() =>
                     router.push(`/antrian/${b.kode_booking}`)
                   }
-                  className="bg-blue-500 text-white px-3 py-1 rounded text-sm"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition"
                 >
                   Lihat Antrian
                 </button>
 
+                {/* CANCEL */}
                 <button
+                  onClick={() => handleCancel(b.id_registration)}
                   disabled={
                     b.status === "CANCELLED" ||
                     b.status === "COMPLETED"
                   }
-                  className="bg-red-500 text-white px-3 py-1 rounded text-sm disabled:opacity-50"
+                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm disabled:opacity-40 transition"
                 >
                   Cancel
                 </button>
 
               </div>
+
             </div>
-          ))
-        )}
+          ))}
 
-      </main>
+        </div>
 
+      </div>
     </div>
   );
 }

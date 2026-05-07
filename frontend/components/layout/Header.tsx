@@ -8,6 +8,10 @@ export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
 
+  if (pathname === "/login" || pathname === "/register") {
+    return null;
+  }
+
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -17,7 +21,6 @@ export default function Header() {
     { name: "FAQ", path: "/FAQ" },
   ];
 
-  // klik luar = close dropdown
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -35,10 +38,9 @@ export default function Header() {
   };
 
   return (
-    <header className="w-full bg-white shadow-sm sticky top-0 z-50">
+    <header className="w-full bg-white shadow-sm sticky top-0 z-50 pointer-events-auto">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-8 py-3">
 
-        {/* LOGO */}
         <div
           onClick={() => router.push("/")}
           className="flex items-center gap-3 cursor-pointer"
@@ -49,38 +51,22 @@ export default function Header() {
           </h1>
         </div>
 
-        {/* MENU */}
         <nav className="flex gap-6">
-          {menu.map((item) => {
-            const isActive = pathname === item.path;
-
-            return (
-              <button
-                key={item.name}
-                onClick={() => router.push(item.path)}
-                className={`relative font-medium transition
-                  ${isActive ? "text-blue-600" : "text-gray-600 hover:text-blue-600"}
-                `}
-              >
-                {item.name}
-
-                <span
-                  className={`absolute left-0 -bottom-1 h-[2px] bg-blue-600 transition-all
-                  ${isActive ? "w-full" : "w-0"}
-                  `}
-                />
-              </button>
-            );
-          })}
+          {menu.map((item) => (
+            <button
+              key={item.name}
+              onClick={() => router.push(item.path)}
+              className="text-gray-600 hover:text-blue-600"
+            >
+              {item.name}
+            </button>
+          ))}
         </nav>
 
-        {/* PROFILE */}
         <div className="relative" ref={dropdownRef}>
-
-          {/* BUTTON PROFILE */}
           <button
             onClick={() => setOpen(!open)}
-            className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-lg hover:bg-blue-100 transition"
+            className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-lg hover:bg-blue-100"
           >
             <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
               U
@@ -88,15 +74,10 @@ export default function Header() {
             <span className="text-sm text-blue-700">User</span>
           </button>
 
-          {/* DROPDOWN */}
           {open && (
             <div className="absolute right-0 mt-2 w-44 bg-white border rounded-xl shadow-lg overflow-hidden">
-
               <button
-                onClick={() => {
-                  setOpen(false);
-                  alert("Halaman setting belum dibuat");
-                }}
+                onClick={() => alert("Setting")}
                 className="w-full text-left px-4 py-3 hover:bg-gray-100 text-sm"
               >
                 ⚙️ Setting
@@ -108,10 +89,8 @@ export default function Header() {
               >
                 🚪 Logout
               </button>
-
             </div>
           )}
-
         </div>
 
       </div>

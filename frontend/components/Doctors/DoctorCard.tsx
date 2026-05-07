@@ -67,7 +67,7 @@ export default function DoctorCard({ doc }: { doc: Doctor }) {
       </p>
 
       <button
-        onClick={() => router.push(`/jadwal/${doc.id_doctor}`)}
+        onClick={() => router.push(`/dokter/${doc.id_doctor}`)}
         className="mt-3 w-full bg-blue-500 text-white py-2 rounded-lg text-sm hover:bg-blue-600 transition"
       >
         Lihat Jadwal

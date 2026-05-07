@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from "cookie-parser";
 
 import authRoutes from './routes/auth';
 import doctorRoutes from './routes/doctor';
@@ -12,12 +13,16 @@ import { authMiddleware } from "./middleware/middleware";
 
 const app = express();
 
-app.use(cors({
-  origin: 'http://localhost:3000', 
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true, 
+  })
+);
 
 app.use(express.json());
+app.use(cookieParser());
+
 app.use("/api/antrian", antrianRoutes);
 app.use("/api/insurance", insuranceRoute);
 app.use("/api/doctors", doctorRoutes);

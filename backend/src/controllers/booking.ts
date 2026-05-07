@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { prisma } from "../prisma";
+import { nanoid } from "nanoid";
 
 type BookingBody = {
   scheduleId: number;
@@ -107,14 +108,25 @@ export const createBooking = async (
     const nomorFormatted = String(nomorUrut).padStart(3, "0");
     const nomor_antrian = `${initials}A${nomorFormatted}`;
 
-    // ======================
-    // KODE BOOKING
-    // ======================
-    const yyyy = tanggal.getFullYear();
-    const mm = String(tanggal.getMonth() + 1).padStart(2, "0");
-    const dd = String(tanggal.getDate()).padStart(2, "0");
+// ======================
+// KODE BOOKING (UNIQUE)
+// ======================
+const yyyy = tanggal.getFullYear();
+const mm = String(tanggal.getMonth() + 1).padStart(2, "0");
+const dd = String(tanggal.getDate()).padStart(2, "0");
 
-    const kode_booking = `${yyyy}${mm}${dd}${nomorFormatted}`;
+// inisial dokter
+const dokterKode = schedule.doctor.nama_dokter
+  .split(" ")
+  .map((n) => n[0])
+  .join("")
+  .toUpperCase();
+
+// random unique
+const randomCode = nanoid(4).toUpperCase();
+
+const kode_booking =
+  `${dokterKode}-${yyyy}${mm}${dd}-${randomCode}`;
 
     // ======================
     // PATIENT (UPSERT SIMPLE)
