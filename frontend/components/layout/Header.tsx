@@ -16,8 +16,8 @@ export default function Header() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const menu = [
-    { name: "Home", path: "/dashboard" },
-    { name: "About Us", path: "/About" },
+    { name: "Beranda", path: "/dashboard" },
+    { name: "Tentang Kami", path: "/About" },
     { name: "FAQ", path: "/FAQ" },
   ];
 
@@ -71,7 +71,7 @@ export default function Header() {
             <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
               U
             </div>
-            <span className="text-sm text-blue-700">User</span>
+            <span className="text-sm text-blue-700">Pengguna</span>
           </button>
 
           {open && (

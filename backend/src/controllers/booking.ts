@@ -167,7 +167,7 @@ const kode_booking =
     });
 
     // ======================
-    // CREATE ANTRIAN (FIX: HARUS SETELAH CREATE BOOKING)
+    // CREATE ANTRIAN
     // ======================
     await prisma.antrian.create({
       data: {

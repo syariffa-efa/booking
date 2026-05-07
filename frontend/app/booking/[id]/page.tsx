@@ -1,20 +1,40 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+  ChangeEvent,
+} from "react";
+
 import { api } from "@/lib/api";
 import { useParams, useRouter } from "next/navigation";
+
+type FormType = {
+  nama_lengkap: string;
+  no_hp: string;
+  nik: string;
+  ttl: string;
+  jenis_kelamin: string;
+  alamat: string;
+  keluhan: string;
+  id_insurance: string;
+  no_bpjs: string;
+};
 
 export default function BookingPage() {
   const { id } = useParams();
   const router = useRouter();
+
   const [schedule, setSchedule] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const { kode } = useParams();
-  const [bpjsStatus, setBpjsStatus] = useState<string | null>(null);
-  const [bpjsLoading, setBpjsLoading] = useState(false);
 
-  //  SINGLE SOURCE OF TRUTH
-  const [form, setForm] = useState({
+  const [bpjsStatus, setBpjsStatus] =
+    useState<string | null>(null);
+
+  const [bpjsLoading, setBpjsLoading] =
+    useState(false);
+
+  const [form, setForm] = useState<FormType>({
     nama_lengkap: "",
     no_hp: "",
     nik: "",
@@ -26,84 +46,86 @@ export default function BookingPage() {
     no_bpjs: "",
   });
 
-  //  FETCH 
   useEffect(() => {
     if (id) fetchSchedule();
   }, [id]);
 
   const fetchSchedule = async () => {
     try {
-      const res = await api.get(`/api/schedule/${id}`);
+      const res = await api.get(
+        `/api/schedule/${id}`
+      );
+
       setSchedule(res.data.data);
     } catch (err) {
       console.log(err);
     }
   };
 
-  //  BPJS 
   const checkBPJS = async () => {
     if (!form.no_bpjs) {
-      alert("Masukkan nomor BPJS dulu");
+      alert("Masukkan nomor BPJS");
       return;
     }
 
     try {
       setBpjsLoading(true);
 
-      const res = await api.post("/api/insurance/check-bpjs", {
-        no_bpjs: form.no_bpjs,
-      });
+      const res = await api.post(
+        "/api/insurance/check-bpjs",
+        {
+          no_bpjs: form.no_bpjs,
+        }
+      );
 
-      const status = res.data.status;
-      setBpjsStatus(status);
-
-      if (status === "ACTIVE") {
-        alert("BPJS aktif");
-      } else {
-        alert("BPJS tidak aktif, gunakan umum");
-      }
+      setBpjsStatus(res.data.status);
     } catch (err: any) {
-      alert(err.response?.data?.message || "Gagal cek BPJS");
+      alert(
+        err.response?.data?.message ||
+        "Gagal cek BPJS"
+      );
     } finally {
       setBpjsLoading(false);
     }
   };
 
-  //  BOOKING 
   const handleBooking = async () => {
-    if (!schedule) return;
-
-    // VALIDASI
     if (!form.id_insurance) {
-      alert("Pilih asuransi dulu");
-      return;
-    }
-
-    if (form.id_insurance === "2" && !form.no_bpjs) {
-      alert("Masukkan nomor BPJS");
+      alert("Pilih metode pembayaran");
       return;
     }
 
     setLoading(true);
 
     try {
-      const res = await api.post("/api/booking", {
-        scheduleId: Number(id),
-        patient: {
-          nama_lengkap: form.nama_lengkap,
-          no_hp: form.no_hp,
-          nik: form.nik,
-          ttl: form.ttl,
-          jenis_kelamin: form.jenis_kelamin,
-          alamat: form.alamat,
+      const res = await api.post(
+        "/api/booking",
+        {
+          scheduleId: Number(id),
 
-        },
-        keluhan: form.keluhan,
-        id_insurance: Number(form.id_insurance),
-        no_bpjs: form.no_bpjs || null,
-      });
+          patient: {
+            nama_lengkap:
+              form.nama_lengkap,
+            no_hp: form.no_hp,
+            nik: form.nik,
+            ttl: form.ttl,
+            jenis_kelamin:
+              form.jenis_kelamin,
+            alamat: form.alamat,
+          },
 
-      const kode = res.data.data.kode_booking;
+          keluhan: form.keluhan,
+          id_insurance: Number(
+            form.id_insurance
+          ),
+          no_bpjs:
+            form.no_bpjs || null,
+        }
+      );
+
+      const kode =
+        res.data.data.kode_booking;
+
       router.push(`/antrian/${kode}`);
     } catch (err) {
       console.log(err);
@@ -112,161 +134,445 @@ export default function BookingPage() {
     setLoading(false);
   };
 
-  // LOADING 
   if (!schedule) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Loading schedule...</p>
+      <div className="h-screen flex items-center justify-center bg-[#f4f7fb]">
+        <p className="text-slate-500 animate-pulse">
+          Loading...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-5xl mx-auto p-6 grid md:grid-cols-2 gap-6">
+    <div className="min-h-screen bg-[#f4f7fb] overflow-hidden relative">
 
-        {/* LEFT */}
-        <div className="bg-white p-5 rounded-xl shadow">
-          <h2 className="font-bold text-lg mb-4">Detail Jadwal</h2>
+      {/* BLUR */}
+      <div className="absolute top-0 left-0 w-72 h-72 bg-blue-300/20 rounded-full blur-3xl" />
 
-          <p>👨‍⚕️ {schedule.doctor?.nama_dokter}</p>
-          <p>🏥 {schedule.room?.nama_room || "-"}</p>
+      <div className="absolute bottom-0 right-0 w-72 h-72 bg-cyan-300/20 rounded-full blur-3xl" />
 
-          <p>
-            🗓{" "}
-            {schedule.tanggal
-              ? new Date(schedule.tanggal).toLocaleDateString()
-              : "-"}
-          </p>
+      <div className="relative z-10 max-w-7xl mx-auto px-4 py-4">
 
-          <p>
-            ⏰ {schedule.jam_mulai?.slice(11, 16)} -{" "}
-            {schedule.jam_selesai?.slice(11, 16)}
+        {/* HEADER */}
+        <div className="mb-4">
+          <h1 className="text-3xl font-black bg-gradient-to-r from-blue-700 to-cyan-500 bg-clip-text text-transparent">
+            Booking Konsultasi
+          </h1>
+
+          <p className="text-slate-500 text-sm mt-1">
+            Lengkapi data pasien
           </p>
         </div>
 
-        {/* RIGHT */}
-        <div className="bg-white p-5 rounded-xl shadow">
-          <h2 className="font-bold text-lg mb-4">Data Pasien</h2>
+        <div className="grid lg:grid-cols-[300px_1fr] gap-4 items-start">
 
-          <div className="space-y-3">
+          {/* LEFT */}
+          <div className="bg-white/70 backdrop-blur-xl rounded-3xl border border-white/40 shadow-xl p-5">
 
-            <input
-              placeholder="Nama"
-              className="w-full border p-2 rounded"
-              onChange={(e) =>
-                setForm({ ...form, nama_lengkap: e.target.value })
-              }
-            />
+            <div className="flex items-center gap-3 mb-5">
 
-            <input
-              placeholder="No HP"
-              className="w-full border p-2 rounded"
-              onChange={(e) =>
-                setForm({ ...form, no_hp: e.target.value })
-              }
-            />
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-white text-xl shadow-lg">
+                👨‍⚕️
+              </div>
 
-            <input
-              placeholder="NIK"
-              className="w-full border p-2 rounded"
-              onChange={(e) =>
-                setForm({ ...form, nik: e.target.value })
-              }
-            />
+              <div>
+                <h2 className="font-bold text-slate-800 leading-tight">
+                  {
+                    schedule.doctor
+                      ?.nama_dokter
+                  }
+                </h2>
 
-            <input
-              placeholder="tempat tanggal lahir"
-              className="w-full border p-2 rounded"
-              onChange={(e) =>
-                setForm({ ...form, ttl: e.target.value })
-              }
-            />
+                <p className="text-xs text-slate-500">
+                  Jadwal Pemeriksaan
+                </p>
+              </div>
 
-<select
-  value={form.jenis_kelamin}
-  className="w-full border p-2 rounded"
-  onChange={(e) =>
-    setForm({ ...form, jenis_kelamin: e.target.value })
-  }
->
-  <option value="">Pilih Jenis Kelamin</option>
-  <option value="L">Laki-laki</option>
-  <option value="P">Perempuan</option>
-</select>
+            </div>
 
-            <textarea
-              placeholder="Alamat"
-              className="w-full border p-2 rounded"
-              onChange={(e) =>
-                setForm({ ...form, alamat: e.target.value })
-              }
-            />
+            <div className="space-y-3">
 
-            <textarea
-              placeholder="Keluhan"
-              className="w-full border p-2 rounded"
-              onChange={(e) =>
-                setForm({ ...form, keluhan: e.target.value })
-              }
-            />
+              <InfoCard
+                label="Ruangan"
+                value={
+                  schedule.room
+                    ?.nama_room || "-"
+                }
+                icon="🏥"
+              />
 
-            {/* INSURANCE */}
-            <select
-              value={form.id_insurance}
-              className="w-full border p-2 rounded"
-              onChange={(e) =>
-                setForm({ ...form, id_insurance: e.target.value })
-              }
-            >
-              <option value="">Pilih Asuransi</option>
-              <option value="1">UMUM</option>
-              <option value="2">BPJS</option>
-            </select>
+              <InfoCard
+                label="Tanggal"
+                value={
+                  schedule.tanggal
+                    ? new Date(
+                      schedule.tanggal
+                    ).toLocaleDateString(
+                      "id-ID",
+                      {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      }
+                    )
+                    : "-"
+                }
+                icon="🗓"
+              />
+
+              <InfoCard
+                label="Jam"
+                value={`${schedule.jam_mulai?.slice(
+                  11,
+                  16
+                )} - ${schedule.jam_selesai?.slice(
+                  11,
+                  16
+                )}`}
+                icon="⏰"
+              />
+
+            </div>
+          </div>
+
+          {/* RIGHT */}
+          <div className="bg-white/70 backdrop-blur-xl rounded-3xl border border-white/40 shadow-xl p-5">
+
+            {/* FORM */}
+            <div className="grid md:grid-cols-2 gap-3">
+
+              <Input
+                placeholder="Nama Lengkap"
+                value={
+                  form.nama_lengkap
+                }
+                onChange={(
+                  e: ChangeEvent<HTMLInputElement>
+                ) =>
+                  setForm({
+                    ...form,
+                    nama_lengkap:
+                      e.target.value,
+                  })
+                }
+              />
+
+              <Input
+                placeholder="Nomor HP"
+                value={form.no_hp}
+                onChange={(
+                  e: ChangeEvent<HTMLInputElement>
+                ) =>
+                  setForm({
+                    ...form,
+                    no_hp:
+                      e.target.value,
+                  })
+                }
+              />
+
+              <Input
+                placeholder="NIK"
+                value={form.nik}
+                onChange={(
+                  e: ChangeEvent<HTMLInputElement>
+                ) =>
+                  setForm({
+                    ...form,
+                    nik:
+                      e.target.value,
+                  })
+                }
+              />
+
+              <Input
+                placeholder="TTL"
+                value={form.ttl}
+                onChange={(
+                  e: ChangeEvent<HTMLInputElement>
+                ) =>
+                  setForm({
+                    ...form,
+                    ttl:
+                      e.target.value,
+                  })
+                }
+              />
+
+            </div>
+
+            {/* GENDER + INSURANCE */}
+            <div className="grid md:grid-cols-2 gap-4 mt-4">
+
+              {/* GENDER */}
+              <div>
+
+                <p className="text-xs font-semibold text-slate-500 mb-2">
+                  Jenis Kelamin
+                </p>
+
+                <div className="grid grid-cols-2 gap-2">
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setForm(
+                        (
+                          prev
+                        ) => ({
+                          ...prev,
+                          jenis_kelamin:
+                            "L",
+                        })
+                      )
+                    }
+                    className={`rounded-2xl py-3 text-sm font-semibold transition-all
+                    ${form.jenis_kelamin ===
+                        "L"
+                        ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg"
+                        : "bg-white border border-slate-200 hover:bg-blue-50"
+                      }`}
+                  >
+                    👨 Laki
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setForm(
+                        (
+                          prev
+                        ) => ({
+                          ...prev,
+                          jenis_kelamin:
+                            "P",
+                        })
+                      )
+                    }
+                    className={`rounded-2xl py-3 text-sm font-semibold transition-all
+                    ${form.jenis_kelamin ===
+                        "P"
+                        ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg"
+                        : "bg-white border border-slate-200 hover:bg-pink-50"
+                      }`}
+                  >
+                    👩 Perempuan
+                  </button>
+
+                </div>
+              </div>
+
+              {/* INSURANCE */}
+              <div>
+
+                <p className="text-xs font-semibold text-slate-500 mb-2">
+                  Pembayaran
+                </p>
+
+                <div className="grid grid-cols-2 gap-2">
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setForm(
+                        (
+                          prev
+                        ) => ({
+                          ...prev,
+                          id_insurance:
+                            "1",
+                        })
+                      )
+                    }
+                    className={`rounded-2xl py-3 text-sm font-semibold transition-all
+                    ${form.id_insurance ===
+                        "1"
+                        ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg"
+                        : "bg-white border border-slate-200 hover:bg-green-50"
+                      }`}
+                  >
+                    💳 Umum
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setForm(
+                        (
+                          prev
+                        ) => ({
+                          ...prev,
+                          id_insurance:
+                            "2",
+                        })
+                      )
+                    }
+                    className={`rounded-2xl py-3 text-sm font-semibold transition-all
+                    ${form.id_insurance ===
+                        "2"
+                        ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg"
+                        : "bg-white border border-slate-200 hover:bg-orange-50"
+                      }`}
+                  >
+                    🏥 BPJS
+                  </button>
+
+                </div>
+              </div>
+
+            </div>
 
             {/* BPJS */}
-            {form.id_insurance === "2" && (
-              <div className="space-y-2">
-                <input
-                  value={form.no_bpjs}
-                  placeholder="Nomor BPJS"
-                  className="w-full border p-2 rounded"
-                  onChange={(e) =>
-                    setForm({ ...form, no_bpjs: e.target.value })
-                  }
-                />
+            {form.id_insurance ===
+              "2" && (
+                <div className="mt-4 grid md:grid-cols-[1fr_140px] gap-3">
 
-                <button
-                  type="button"
-                  onClick={checkBPJS}
-                  className="bg-green-600 text-white px-3 py-1 rounded"
-                >
-                  {bpjsLoading ? "Mengecek..." : "Cek BPJS"}
-                </button>
+                  <Input
+                    placeholder="Nomor BPJS"
+                    value={
+                      form.no_bpjs
+                    }
+                    onChange={(
+                      e: ChangeEvent<HTMLInputElement>
+                    ) =>
+                      setForm({
+                        ...form,
+                        no_bpjs:
+                          e.target
+                            .value,
+                      })
+                    }
+                  />
 
-                {bpjsStatus === "ACTIVE" && (
-                  <p className="text-green-600">BPJS aktif</p>
-                )}
+                  <button
+                    onClick={
+                      checkBPJS
+                    }
+                    className="rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-semibold text-sm shadow-lg"
+                  >
+                    {bpjsLoading
+                      ? "Checking..."
+                      : "Cek BPJS"}
+                  </button>
 
-                {bpjsStatus === "INACTIVE" && (
-                  <p className="text-red-600">
-                    BPJS tidak aktif → gunakan umum
-                  </p>
-                )}
+                </div>
+              )}
+
+            {/* STATUS */}
+            {bpjsStatus && (
+              <div
+                className={`mt-3 rounded-2xl px-4 py-3 text-sm font-medium
+                ${bpjsStatus ===
+                    "ACTIVE"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-red-100 text-red-700"
+                  }`}
+              >
+                {bpjsStatus ===
+                  "ACTIVE"
+                  ? "✅ BPJS aktif"
+                  : "❌ BPJS tidak aktif"}
               </div>
             )}
 
+            {/* TEXTAREA */}
+            <div className="grid md:grid-cols-2 gap-3 mt-4">
+
+              <textarea
+                rows={3}
+                placeholder="Alamat"
+                className="w-full rounded-2xl border border-slate-200 bg-white/80 p-3 text-sm outline-none focus:ring-4 focus:ring-blue-100"
+                onChange={(
+                  e: ChangeEvent<HTMLTextAreaElement>
+                ) =>
+                  setForm({
+                    ...form,
+                    alamat:
+                      e.target.value,
+                  })
+                }
+              />
+
+              <textarea
+                rows={3}
+                placeholder="Keluhan"
+                className="w-full rounded-2xl border border-slate-200 bg-white/80 p-3 text-sm outline-none focus:ring-4 focus:ring-blue-100"
+                onChange={(
+                  e: ChangeEvent<HTMLTextAreaElement>
+                ) =>
+                  setForm({
+                    ...form,
+                    keluhan:
+                      e.target.value,
+                  })
+                }
+              />
+
+            </div>
+
             {/* BUTTON */}
             <button
-              onClick={handleBooking}
+              onClick={
+                handleBooking
+              }
               disabled={loading}
-              className="mt-5 w-full bg-blue-600 text-white py-2 rounded"
+              className="mt-5 w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold shadow-[0_10px_30px_rgba(59,130,246,0.35)] hover:scale-[1.01] transition-all"
             >
-              {loading ? "Memproses..." : "Konfirmasi Booking"}
+              {loading
+                ? "Memproses..."
+                : "Konfirmasi Booking"}
             </button>
 
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* INPUT */
+function Input({
+  placeholder,
+  value,
+  onChange,
+}: {
+  placeholder: string;
+  value?: string;
+  onChange?: (
+    e: ChangeEvent<HTMLInputElement>
+  ) => void;
+}) {
+  return (
+    <input
+      placeholder={placeholder}
+      value={value}
+      onChange={onChange}
+      className="w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm outline-none focus:ring-4 focus:ring-blue-100 transition-all"
+    />
+  );
+}
+
+/* INFO CARD */
+function InfoCard({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string;
+  icon: string;
+}) {
+  return (
+    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3">
+
+      <p className="text-[11px] text-slate-400 mb-1">
+        {label}
+      </p>
+
+      <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+        <span>{icon}</span>
+        <span>{value}</span>
       </div>
 
     </div>

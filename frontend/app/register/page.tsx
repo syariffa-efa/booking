@@ -70,7 +70,7 @@ export default function RegisterPage() {
         {/* RIGHT */}
         <div className="w-1/2 bg-gradient-to-br from-blue-100 to-white p-16 flex flex-col justify-center">
 
-          {/* 🔥 LANGUAGE DROPDOWN */}
+          {/*  LANGUAGE DROPDOWN */}
           <div className="flex justify-end mb-6">
             <select
               value={lang}

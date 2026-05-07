@@ -1,6 +1,5 @@
 "use client";
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
+
 import PromoSlider from '@/components/home/promo';
 import MenuGrid from '@/components/home/menu';
 import MapSection from '@/components/home/maps';

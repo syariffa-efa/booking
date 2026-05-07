@@ -39,6 +39,7 @@ export default function RiwayatPage() {
 
       // refresh data setelah cancel
       fetchRiwayat();
+
     } catch (err) {
       console.log("Cancel error:", err);
     }
@@ -143,14 +144,22 @@ export default function RiwayatPage() {
               <div className="flex gap-3 mt-4">
 
                 {/* LIHAT ANTRIAN */}
-                <button
-                  onClick={() =>
-                    router.push(`/antrian/${b.kode_booking}`)
-                  }
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition"
-                >
-                  Lihat Antrian
-                </button>
+<button
+  onClick={() =>
+    router.push(`/antrian/${b.kode_booking}`)
+  }
+  disabled={b.status === "CANCELLED"}
+  className={`
+    px-4 py-2 rounded-lg text-sm transition text-white
+    ${
+      b.status === "CANCELLED"
+        ? "bg-gray-400 cursor-not-allowed"
+        : "bg-blue-600 hover:bg-blue-700"
+    }
+  `}
+>
+  Lihat Antrian
+</button>
 
                 {/* CANCEL */}
                 <button
