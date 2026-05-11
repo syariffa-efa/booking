@@ -8,16 +8,12 @@ import { ANTRIAN_STEPS } from "@/lib/constants/antrianFlow";
 
 export default function AntrianPage() {
   const router = useRouter();
-
   const { kode } = useParams<{
     kode: string | string[];
   }>();
 
-  const [data, setData] =
-    useState<any>(null);
-
-  const [loading, setLoading] =
-    useState(true);
+  const [data, setData] =useState<any>(null);
+  const [loading, setLoading] =useState(true);
 
   useEffect(() => {
     if (
@@ -188,9 +184,7 @@ export default function AntrianPage() {
               return (
                 <div
                   key={step.key}
-                  className="flex items-start gap-3"
-                >
-
+                  className="flex items-start gap-3" >
                   <div className="flex flex-col items-center">
 
                     <div

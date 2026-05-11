@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import {successResponse,error,} from "../shared/helpers/response";
 
 type CheckBPJSBody = {
   no_bpjs: string;
@@ -12,53 +13,61 @@ export const checkBPJS = async (
     const { no_bpjs } = req.body;
 
     if (!no_bpjs) {
-      return res.status(400).json({
-        success: false,
-        message: "Nomor BPJS wajib diisi",
-      });
+      return error(
+        res,
+        "Nomor BPJS wajib diisi",
+        400
+      );
     }
-
 
     // aturan sederhana:
     // - harus 13 digit
     // - kalau mulai dengan "00" → aktif
     // - selain itu tidak aktif
 
-    const isValidLength = no_bpjs.length === 13;
-    const isActive = isValidLength && no_bpjs.startsWith("00");
+    const isValidLength =
+      no_bpjs.length === 13;
+
+    const isActive =
+      isValidLength &&
+      no_bpjs.startsWith("00");
 
     if (!isValidLength) {
-      return res.status(400).json({
-        success: false,
-        status: "INVALID",
-        message: "Nomor BPJS tidak valid",
-      });
+      return error(
+        res,
+        "Nomor BPJS tidak valid",
+        400
+      );
     }
 
     if (!isActive) {
-      return res.status(200).json({
-        success: true,
-        status: "INACTIVE",
-        message: "BPJS tidak aktif",
-      });
+      return successResponse(
+        res,
+        "BPJS tidak aktif",
+        {
+          status: "INACTIVE",
+        }
+      );
     }
 
-    return res.status(200).json({
-      success: true,
-      status: "ACTIVE",
-      message: "BPJS aktif",
-      data: {
+    return successResponse(
+      res,
+      "BPJS aktif",
+      {
+        status: "ACTIVE",
         nama: "Peserta BPJS",
         kelas: "Kelas 1",
         faskes: "RS Default",
-      },
-    });
+      }
+    );
+
   } catch (err) {
     console.error(err);
 
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
+    return error(
+      res,
+      "Internal server error",
+      500
+    );
   }
 };

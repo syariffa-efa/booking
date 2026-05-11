@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-
 import { BookingService } from "@/lib/service/booking.service";
 import { useBookingForm } from "@/lib/hooks/usebookingform";
 
-/* ================= TYPE ================= */
+/*  TYPE */
 type ScheduleType = {
   tanggal: string;
   jam_mulai: string;
@@ -22,12 +21,12 @@ type ScheduleType = {
   };
 };
 
-/* ================= HELPER ================= */
+/*  HELPER */
 const normalizeId = (
   id: string | string[] | undefined
 ) => (Array.isArray(id) ? id[0] : id);
 
-/* ================= FORMAT JAM ================= */
+/* FORMAT JAM */
 const formatJam = (value?: string) => {
   if (!value) return "-";
 
@@ -38,7 +37,7 @@ const formatJam = (value?: string) => {
   return value.slice(0, 5);
 };
 
-/* ================= PAGE ================= */
+/* PAGE */
 export default function BookingPage() {
   const params = useParams();
   const router = useRouter();
@@ -59,7 +58,7 @@ export default function BookingPage() {
       "ACTIVE" | "INACTIVE" | null
     >(null);
 
-  /* ================= RHF ================= */
+  /*  RHF  */
   const {
     register,
     handleSubmit,
@@ -70,7 +69,7 @@ export default function BookingPage() {
 
   const form = watch();
 
-  /* ================= FETCH SCHEDULE ================= */
+  /*  FETCH SCHEDULE  */
   useEffect(() => {
     if (!id) return;
 
@@ -93,7 +92,7 @@ export default function BookingPage() {
     fetchSchedule();
   }, [id]);
 
-  /* ================= CHECK BPJS ================= */
+  /* CHECK BPJS  */
   const checkBPJS = async () => {
     if (!form.no_bpjs) {
       alert("Masukkan nomor BPJS");
@@ -119,7 +118,7 @@ export default function BookingPage() {
     }
   };
 
-  /* ================= BOOKING ================= */
+  /*  BOOKING  */
   const handleBooking = async (
     values: any
   ) => {
@@ -130,29 +129,17 @@ export default function BookingPage() {
         scheduleId: Number(id),
 
         patient: {
-          nama_lengkap:
-            values.nama_lengkap,
-
+          nama_lengkap: values.nama_lengkap,
           no_hp: values.no_hp,
-
           nik: values.nik,
-
           ttl: values.ttl,
-
-          jenis_kelamin:
-            values.jenis_kelamin,
-
+          jenis_kelamin:values.jenis_kelamin,
           alamat: values.alamat,
         },
 
         keluhan: values.keluhan,
-
-        id_insurance: Number(
-          values.id_insurance
-        ),
-
-        no_bpjs:
-          values.no_bpjs || null,
+        id_insurance: Number(values.id_insurance),
+        no_bpjs: values.no_bpjs || null,
       };
 
       const res =
@@ -173,7 +160,7 @@ export default function BookingPage() {
     }
   };
 
-  /* ================= LOADING ================= */
+  /*  LOADING */
   if (!schedule) {
     return (
       <div className="h-screen flex items-center justify-center bg-[#f4f7fb]">
@@ -184,7 +171,7 @@ export default function BookingPage() {
     );
   }
 
-  /* ================= UI ================= */
+  /*  UI  */
   return (
     <div className="min-h-screen bg-[#f4f7fb] relative overflow-hidden">
       <div className="absolute top-0 left-0 w-72 h-72 bg-blue-300/20 rounded-full blur-3xl" />
@@ -571,7 +558,7 @@ export default function BookingPage() {
   );
 }
 
-/* ================= INPUT ================= */
+/*  INPUT  */
 function Input({
   placeholder,
   error,

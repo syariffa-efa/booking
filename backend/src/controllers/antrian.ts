@@ -1,10 +1,6 @@
 import type { Request, Response } from "express";
 import { prisma } from "../prisma/client";
-
-import {
-  successResponse,
-  error,
-} from "../shared/helpers/response";
+import { successResponse,error,} from "../shared/helpers/response";
 
 export const getBookingByCode = async (
   req: Request,

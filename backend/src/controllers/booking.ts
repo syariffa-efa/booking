@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { prisma } from "../prisma/client";
 import { nanoid } from "nanoid";
+import {successResponse,error,} from "../shared/helpers/response";
 
 type BookingBody = {
   scheduleId: number;
@@ -31,12 +32,13 @@ export const createBooking = async (
     } = req.body;
 
     // VALIDASI INPUT
-    if (!scheduleId || !patient) {
-      return res.status(400).json({
-        success: false,
-        message: "Data tidak lengkap",
-      });
-    }
+      if (!scheduleId || !patient) {
+        return error(
+          res,
+          "Data tidak lengkap",
+          400
+        );
+      }
 
   // AMBIL SCHEDULE
     const schedule = await prisma.schedule.findUnique({
@@ -46,12 +48,13 @@ export const createBooking = async (
         room: true,
       },
     });
-
+    // VALIDASI SCHEDULE
     if (!schedule || !schedule.doctor || !schedule.tanggal) {
-      return res.status(404).json({
-        success: false,
-        message: "Schedule tidak valid",
-      });
+      return error(
+        res,
+        "Schedule tidak valid",
+        404
+      );
     }
 
     // HITUNG ANTRIAN HARI INI
@@ -78,12 +81,14 @@ export const createBooking = async (
         ? schedule.kuota_bpjs
         : schedule.kuota_umum;
 
-    if (kuota !== null && totalAntrian >= kuota) {
-      return res.status(400).json({
-        success: false,
-        message: "Kuota penuh",
-      });
-    }
+    // VALIDASI CEK KUOTA
+        if (kuota !== null && totalAntrian >= kuota) {
+          return error(
+            res,
+            "Kuota penuh",
+            400
+          );
+        }
 
     const nomorUrut = totalAntrian + 1;
 
@@ -97,23 +102,23 @@ export const createBooking = async (
     const nomorFormatted = String(nomorUrut).padStart(3, "0");
     const nomor_antrian = `${initials}A${nomorFormatted}`;
 
-// BIKIN KODE BOOKING 
-const yyyy = tanggal.getFullYear();
-const mm = String(tanggal.getMonth() + 1).padStart(2, "0");
-const dd = String(tanggal.getDate()).padStart(2, "0");
+    // BIKIN KODE BOOKING 
+    const yyyy = tanggal.getFullYear();
+    const mm = String(tanggal.getMonth() + 1).padStart(2, "0");
+    const dd = String(tanggal.getDate()).padStart(2, "0");
 
-// DITAMBAH INISIAL DOKTER
-const dokterKode = schedule.doctor.nama_dokter
-  .split(" ")
-  .map((n) => n[0])
-  .join("")
-  .toUpperCase();
+    // DITAMBAH INISIAL DOKTER
+    const dokterKode = schedule.doctor.nama_dokter
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
 
-// DAN HURUF RANDOM DR NANOID
-const randomCode = nanoid(4).toUpperCase();
-// HASIL AKHIR
-const kode_booking =
-  `${dokterKode}-${yyyy}${mm}${dd}-${randomCode}`;
+    // DAN HURUF RANDOM DR NANOID
+    const randomCode = nanoid(4).toUpperCase();
+    // HASIL AKHIR
+    const kode_booking =
+      `${dokterKode}-${yyyy}${mm}${dd}-${randomCode}`;
 
     // CEK PATIENT
     const existingPatient = await prisma.patient.findFirst({
@@ -159,18 +164,19 @@ const kode_booking =
     });
 
    // RESPONSE
-    return res.status(201).json({
-      success: true,
-      message: "Booking berhasil",
-      data: booking,
-    });
+    return successResponse(
+      res,
+      "Booking berhasil",
+      booking
+    );
 
   } catch (err) {
     console.error("CREATE_BOOKING_ERROR:", err);
-
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
+  
+    return error(
+      res,
+      "Internal server error",
+      500
+    );
   }
 };

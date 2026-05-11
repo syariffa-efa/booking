@@ -1,46 +1,67 @@
 import type { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import {successResponse,error,} from "../shared/helpers/response";
 
 const prisma = new PrismaClient();
 
 // ALL
-export const getAllDoctors = async (req: Request, res: Response) => {
+export const getAllDoctors = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const doctors = await prisma.doctor.findMany({
-      where: { is_active: true }
+      where: { is_active: true },
     });
 
-    res.json({ success: true, data: doctors });
+    return successResponse(
+      res,
+      "Berhasil mengambil data dokter",
+      doctors
+    );
+
   } catch (err) {
-    res.status(500).json({ success: false });
+    console.error(err);
+
+    return error(
+      res,
+      "Gagal mengambil data dokter",
+      500
+    );
   }
 };
 
-//TOP 5
-
-export const getTopDoctors = async (req:Request, res: Response) => {
+// TOP 5
+export const getTopDoctors = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const doctors = await prisma.doctor.findMany({
       where: {
         id_doctor: {
-          lte: 5, 
+          lte: 5,
         },
       },
       take: 5,
       orderBy: {
-        id_doctor: 'asc',
+        id_doctor: "asc",
       },
     });
 
-    res.json({
-      success: true,
-      data: doctors,
-    });
+    return successResponse(
+      res,
+      "Berhasil mengambil top dokter",
+      doctors
+    );
+
   } catch (err) {
     console.error(err);
-    res.json({
-      success: false,
-      message: 'Gagal ambil dokter',
-    });
+
+    return error(
+      res,
+      "Gagal ambil dokter",
+      500
+    );
   }
 };

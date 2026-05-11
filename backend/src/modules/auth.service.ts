@@ -35,9 +35,7 @@ export const loginUser = async (data: any) => {
   });
 
   if (!user) throw new Error("Email tidak ditemukan");
-
   const isMatch = await bcrypt.compare(data.password, user.password);
-
   if (!isMatch) throw new Error("Password salah");
 
   const token = jwt.sign(

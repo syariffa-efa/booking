@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import { prisma } from "../prisma/client";
 import {successResponse,error,} from "../shared/helpers/response";
 
-/* ================= GET ALL ================= */
+/*  GET ALL  */
 export const getAllSchedule = async (
   req: Request,
   res: Response
@@ -114,7 +114,7 @@ export const getAllSchedule = async (
   }
 };
 
-/* ================= GET BY DOCTOR ================= */
+/*  GET BY DOCTOR  */
 export const getScheduleByDoctor =
   async (
     req: Request,
@@ -151,7 +151,7 @@ export const getScheduleByDoctor =
     }
   };
 
-/* ================= GET BY ID ================= */
+/*  GET BY ID  */
 export const getScheduleById = async (
   req: Request,
   res: Response

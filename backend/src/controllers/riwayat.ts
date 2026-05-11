@@ -1,21 +1,31 @@
 import type { Request, Response } from "express";
 import { prisma } from "../prisma/client";
+import {successResponse,error,} from "../shared/helpers/response";
 
-//Bikin status booking
-    const registrations_status = {
-        BOOKED: "BOOKED",
-        RESCHEDULE: "RESCHEDULE",
-        CANCELLED: "CANCELLED",
-        COMPLETE: "COMPLETED",
-      }
+// Bikin status booking
+const registrations_status = {
+  BOOKED: "BOOKED",
+  RESCHEDULE: "RESCHEDULE",
+  CANCELLED: "CANCELLED",
+  COMPLETE: "COMPLETED",
+};
 
 // BIKIN HISTORY BOOKING
-export const getBookingHistory = async (req: Request, res: Response) => {
+export const getBookingHistory = async (
+  req: Request,
+  res: Response
+) => {
+  try {
     if (!req.user) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
+      return error(
+        res,
+        "Unauthorized",
+        401
+      );
+    }
 
-    const data = await prisma.registrations.findMany({
+    const data =
+      await prisma.registrations.findMany({
         include: {
           patient: true,
           schedule: {
@@ -29,29 +39,75 @@ export const getBookingHistory = async (req: Request, res: Response) => {
           created_at: "desc",
         },
       });
-  
-    res.json(data);
-  };
 
-  //cancel booking
-  export const cancelBooking = async (req: Request, res: Response) => {
+    return successResponse(
+      res,
+      "Berhasil mengambil riwayat booking",
+      data
+    );
+
+  } catch (err) {
+    console.error(err);
+
+    return error(
+      res,
+      "Internal server error",
+      500
+    );
+  }
+};
+
+// cancel booking
+export const cancelBooking = async (
+  req: Request,
+  res: Response
+) => {
+  try {
     const { id_registration } = req.params;
-  
-    const booking = await prisma.registrations.findUnique({
-      where: { id_registration: Number(id_registration) },
-    });
-  
+
+    const booking =
+      await prisma.registrations.findUnique({
+        where: {
+          id_registration: Number(
+            id_registration
+          ),
+        },
+      });
+
     if (!booking) {
-        return res.status(404).json({ message: "Booking tidak ditemukan" });
-      }
-  
-    const updated = await prisma.registrations.update({
-      where: { id_registration: Number(id_registration) },
-      data: {
-        status: "CANCELLED",
-      },
-    });
-  
-    res.json(updated);
-  };
-     
+      return error(
+        res,
+        "Booking tidak ditemukan",
+        404
+      );
+    }
+
+    const updated =
+      await prisma.registrations.update({
+        where: {
+          id_registration: Number(
+            id_registration
+          ),
+        },
+        data: {
+          status:
+            registrations_status.CANCELLED,
+        },
+      });
+
+    return successResponse(
+      res,
+      "Booking berhasil dibatalkan",
+      updated
+    );
+
+  } catch (err) {
+    console.error(err);
+
+    return error(
+      res,
+      "Internal server error",
+      500
+    );
+  }
+};

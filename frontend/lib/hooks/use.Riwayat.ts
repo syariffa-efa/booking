@@ -13,7 +13,7 @@ export const useRiwayat = () => {
 
       const res = await RiwayatService.getAll();
 
-      setData(res.data || []);
+      setData(res.data.data || []);
     } catch (err) {
       console.log("Error riwayat:", err);
       setData([]);
@@ -25,6 +25,7 @@ export const useRiwayat = () => {
   const cancelBooking = async (id: number) => {
     try {
       await RiwayatService.cancel(id);
+
       fetchRiwayat(); // refresh
     } catch (err) {
       console.log("Cancel error:", err);
