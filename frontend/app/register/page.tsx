@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
-import { registerUser } from "@/lib/service/register.service";
+import { handleRegister } from "@/lib/service/register.handler";
 import { useLang } from "@/context/language";
 import { useText } from "@/lib/useText";
 
@@ -21,35 +21,27 @@ export default function RegisterPage() {
   const router = useRouter();
   const { register, handleSubmit } = useForm<RegisterForm>();
 
-  // ✅ HARUS DI DALAM COMPONENT
   const { lang, setLang } = useLang();
   const t = useText("register");
 
   const mutation = useMutation({
-    mutationFn: registerUser,
+    mutationFn: handleRegister,
     onSuccess: () => {
       alert("Register berhasil");
       router.push("/login");
     },
+    onError: (err: any) => {
+      alert(err.message || "Register gagal");
+    },
   });
 
   const onSubmit = (data: RegisterForm) => {
-    if (data.password !== data.confirm) {
-      alert("Password tidak sama");
-      return;
-    }
-
-    mutation.mutate({
-      nama: data.nama,
-      email: data.email,
-      password: data.password,
-      no_hp: data.code + data.phone,
-    });
+    mutation.mutate(data);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
-      <div className="w-[1400px] h-[800px] bg-white rounded-3xl flex shadow-2xl overflow-hidden">
+      <div className="w-[1000px] h-[600px] bg-white rounded-3xl flex shadow-2xl overflow-hidden">
 
         {/* LEFT */}
         <div className="w-1/2 bg-gradient-to-br from-blue-200 via-white to-blue-100 p-16 flex flex-col justify-center">
@@ -70,7 +62,7 @@ export default function RegisterPage() {
         {/* RIGHT */}
         <div className="w-1/2 bg-gradient-to-br from-blue-100 to-white p-16 flex flex-col justify-center">
 
-          {/*  LANGUAGE DROPDOWN */}
+          {/* LANGUAGE */}
           <div className="flex justify-end mb-6">
             <select
               value={lang}

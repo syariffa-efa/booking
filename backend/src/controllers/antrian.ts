@@ -1,47 +1,59 @@
 import type { Request, Response } from "express";
-import { prisma } from "../prisma";
+import { prisma } from "../prisma/client";
 
-export const getBookingByCode = async (req: Request, res: Response) => {
+import {
+  successResponse,
+  error,
+} from "../shared/helpers/response";
+
+export const getBookingByCode = async (
+  req: Request,
+  res: Response
+) => {
   try {
     let kode = req.params.kode;
-    kode = Array.isArray(kode) ? kode[0] : kode;
-    console.log("KODE PARAM:", kode);
+
+    kode = Array.isArray(kode)
+      ? kode[0]
+      : kode;
 
     if (!kode) {
-      return res.status(400).json({
-        success: false,
-        message: "Kode booking tidak valid",
-      });
+      return error(
+        res,
+        "Kode booking tidak valid",
+        400
+      );
     }
 
-    const booking = await prisma.registrations.findFirst({
-      where: {
-        kode_booking: {
-          equals: kode.trim(),
-          mode: "insensitive",
-        },
-      },
-      include: {
-        patient: true,
-        schedule: {
-          include: {
-            doctor: true,
-            room: true,
+    const booking =
+      await prisma.registrations.findFirst({
+        where: {
+          kode_booking: {
+            equals: kode.trim(),
+            mode: "insensitive",
           },
         },
-        antrian: true,
-      },
-    });
-
-    console.log("BOOKING RESULT:", booking);
+        include: {
+          patient: true,
+          schedule: {
+            include: {
+              doctor: true,
+              room: true,
+            },
+          },
+          antrian: true,
+        },
+      });
 
     if (!booking) {
-      return res.status(404).json({
-        success: false,
-        message: "Booking tidak ditemukan",
-      });
+      return error(
+        res,
+        "Booking tidak ditemukan",
+        404
+      );
     }
 
+    /* FLOW */
     const antrian = booking.antrian?.[0];
 
     const flow = {
@@ -52,28 +64,34 @@ export const getBookingByCode = async (req: Request, res: Response) => {
       farmasi: !!antrian?.waktu_farmasi,
     };
 
-    const peserta_dilayani = await prisma.registrations.count({
-      where: {
-        id_schedule: booking.id_schedule,
-        status: "DONE",
-      },
-    });
+    /* PESERTA DILAYANI */
+    const peserta_dilayani =
+      await prisma.registrations.count({
+        where: {
+          id_schedule:
+            booking.id_schedule,
+          status: "BOOKED",
+        },
+      });
 
-    return res.json({
-      success: true,
-      data: {
+    return successResponse(
+      res,
+      "Berhasil ambil data antrian",
+      {
         ...booking,
         flow,
         peserta_dilayani,
-      },
-    });
-
+      }
+    );
   } catch (err) {
-    console.error("GET_ANTRIAN_ERROR:", err);
+    console.error(
+      "GET_ANTRIAN_ERROR:",
+      err
+    );
 
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    return error(
+      res,
+      "Server error"
+    );
   }
 };

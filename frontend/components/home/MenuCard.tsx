@@ -33,12 +33,7 @@ export default function MenuCard({ item }: any) {
   const handleMouseLeave = () => {
     if (!cardRef.current) return;
 
-    cardRef.current.style.transform = `
-      perspective(1000px)
-      rotateX(0deg)
-      rotateY(0deg)
-      scale(1)
-    `;
+    cardRef.current.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)`;
   };
 
   return (

@@ -1,215 +1,391 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { api } from "@/lib/api";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ScheduleService } from "@/lib/service/schedule.service";
+import { useScheduleFilter } from "@/lib/hooks/useScheduleFilter";
+
+type ScheduleType = {
+  id_schedule: number;
+  tanggal: string;
+  jam_mulai: string;
+  jam_selesai: string;
+
+  doctor: {
+    id_doctor: number;
+    nama_dokter: string;
+    spesialisasi: string;
+  };
+
+  room: {
+    nama_room: string;
+    lantai: number;
+  };
+};
+
+/* FORMAT JAM */
+const formatJam = (value?: string) => {
+  if (!value) return "-";
+
+  if (value.includes("T")) {
+    return value.split("T")[1].slice(0, 5);
+  }
+
+  return value.slice(0, 5);
+};
 
 export default function JadwalPage() {
   const router = useRouter();
-
-  const [data, setData] = useState<any[]>([]);
-  const [search, setSearch] = useState("");
-  const [tanggal, setTanggal] = useState("");
+  const [schedules, setSchedules] = useState<ScheduleType[]>([]);
+  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [limit] = useState(6);
   const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
 
-  const limit = 6;
+  const {register,watch,reset,} = useScheduleFilter();
+  const search = watch("search");
+  const tanggal = watch("tanggal");
 
-  const fetchData = async (customPage = 1) => {
+  /* TOTAL PAGE */
+  const totalPage = Math.ceil(
+    total / limit
+  );
+
+  /* FETCH */
+  const fetchSchedule = async () => {
     try {
       setLoading(true);
 
-      const res = await api.get("/api/schedule", {
-        params: {
+      const res =
+        await ScheduleService.getAll({
           search,
           tanggal,
-          page: customPage,
+          page,
           limit,
-        },
-      });
+        });
 
-      setData(res.data.data || []);
-      setTotal(res.data.total || 0);
+      setSchedules(
+        res?.data?.schedules || []
+      );
+
+      setTotal(
+        res?.data?.total || 0
+      );
+
     } catch (err) {
-      console.log(err);
+      console.log(
+        "Fetch schedule error:",
+        err
+      );
+
+      setSchedules([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData(1);
-  }, []);
+    fetchSchedule();
+  }, [search, tanggal, page]);
 
-  const handleSearch = () => {
+  /* RESET PAGE SAAT FILTER */
+  useEffect(() => {
     setPage(1);
-    fetchData(1);
-  };
+  }, [search, tanggal]);
 
-  const handleReset = () => {
-    setSearch("");
-    setTanggal("");
-    setPage(1);
-    fetchData(1);
-  };
+  /* GROUPING */
+  const groupedSchedules =
+    schedules.reduce(
+      (
+        acc: Record<
+          number,
+          {
+            doctor:
+              ScheduleType["doctor"];
+            schedules:
+              ScheduleType[];
+          }
+        >,
+        item
+      ) => {
+        const doctorId =
+          item.doctor?.id_doctor;
 
-  const totalPage = Math.ceil(total / limit);
+        if (!doctorId) return acc;
 
-  const groupedData = useMemo(() => {
-    const group: any = {};
+        if (!acc[doctorId]) {
+          acc[doctorId] = {
+            doctor: item.doctor,
+            schedules: [],
+          };
+        }
 
-    data.forEach((item) => {
-      const doctorId = item.doctor.id_doctor;
+        acc[
+          doctorId
+        ].schedules.push(item);
 
-      if (!group[doctorId]) {
-        group[doctorId] = {
-          doctor: item.doctor,
-          schedules: [],
-        };
-      }
-
-      group[doctorId].schedules.push(item);
-    });
-
-    return group;
-  }, [data]);
+        return acc;
+      },
+      {}
+    );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#f4f7fb] py-6">
 
-      <div className="max-w-6xl mx-auto px-6 py-10">
+      <div className="max-w-6xl mx-auto px-4">
 
-        {/* TITLE */}
+        {/* HEADER */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">Jadwal Dokter Terdekat</h1>
-          <p className="text-gray-500">Cari dan pilih jadwal dokter</p>
+
+          <h1 className="text-3xl font-black bg-gradient-to-r from-blue-700 to-cyan-500 bg-clip-text text-transparent">
+            Jadwal Dokter
+          </h1>
+
+          <p className="text-sm text-slate-500 mt-1">
+            Cari jadwal konsultasi dokter
+          </p>
+
         </div>
 
-        {/* SEARCH */}
-        <div className="bg-white p-4 rounded-xl shadow flex gap-3 mb-6">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari dokter / spesialis..."
-            className="flex-1 border p-2 rounded-lg"
-          />
+        {/* FILTER */}
+        <div className="bg-white rounded-3xl p-4 shadow-md mb-6">
 
-          <input
-            type="date"
-            value={tanggal}
-            onChange={(e) => setTanggal(e.target.value)}
-            className="border p-2 rounded-lg"
-          />
+          <div className="grid md:grid-cols-[1fr_220px_120px] gap-3">
 
-          <button
-            onClick={handleReset}
-            className="bg-gray-200 px-4 rounded-lg"
-          >
-            Reset
-          </button>
+            {/* SEARCH */}
+            <input
+              {...register("search")}
+              placeholder="Cari dokter / spesialis"
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none"
+            />
 
-          <button
-            onClick={handleSearch}
-            className="bg-blue-600 text-white px-4 rounded-lg"
-          >
-            Cari
-          </button>
+            {/* TANGGAL */}
+            <input
+              type="date"
+              {...register("tanggal")}
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none"
+            />
+
+            {/* RESET */}
+            <button
+              type="button"
+              onClick={() => {
+                reset();
+                setPage(1);
+              }}
+              className="rounded-2xl border border-slate-200 bg-white text-sm font-semibold hover:bg-slate-50 transition"
+            >
+              Reset
+            </button>
+
+          </div>
+
         </div>
+
+        {/* LOADING */}
+        {loading && (
+          <div className="bg-white rounded-3xl p-8 text-center text-slate-500 shadow">
+            Loading...
+          </div>
+        )}
+
+        {/* EMPTY */}
+        {!loading &&
+          schedules.length === 0 && (
+            <div className="bg-white rounded-3xl p-8 text-center text-slate-500 shadow">
+              Jadwal tidak ditemukan
+            </div>
+          )}
 
         {/* LIST */}
-        {loading ? (
-          <p className="text-center py-10">Loading...</p>
-        ) : Object.keys(groupedData).length === 0 ? (
-          <p className="text-center py-10 text-gray-500">
-            Tidak ada jadwal ditemukan
-          </p>
-        ) : (
-          <div className="grid md:grid-cols-2 gap-6">
+        {!loading &&
+          schedules.length > 0 && (
+            <>
+              <div className="space-y-4">
 
-            {Object.values(groupedData).map((group: any) => (
-              <div
-                key={group.doctor.id_doctor}
-                className="bg-white p-5 rounded-xl shadow border"
-              >
-                {/* DOCTOR INFO */}
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-bold">
-                      {group.doctor.nama_dokter}, {group.doctor.gelar}
-                    </p>
-                    <p className="text-gray-500 text-sm">
-                      {group.doctor.spesialisasi}
-                    </p>
-                  </div>
-
-                  <span
-                    className={`px-3 py-1 text-xs rounded-full ${
-                      group.doctor.is_active
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
+                {Object.values(
+                  groupedSchedules
+                ).map((group) => (
+                  <div
+                    key={
+                      group.doctor
+                        .id_doctor
+                    }
+                    className="bg-white rounded-3xl p-5 shadow-md"
                   >
-                    {group.doctor.is_active ? "Aktif" : "Nonaktif"}
-                  </span>
-                </div>
 
-                {/* SCHEDULE LIST */}
-                <div className="mt-4 space-y-2 text-sm text-gray-600">
+                    {/* HEADER */}
+                    <div className="flex items-start justify-between gap-4">
 
-                  {group.schedules.map((item: any) => (
-                    <div
-                      key={item.id_schedule}
-                      className="p-2 rounded border bg-gray-50 flex justify-between items-center"
-                    >
                       <div>
-                        🗓 {new Date(item.tanggal).toLocaleDateString("id-ID")}{" "}
-                        ⏰ {item.jam_mulai.slice(11, 16)} -{" "}
-                        {item.jam_selesai.slice(11, 16)}
+
+                        <h2 className="text-lg font-bold text-slate-800">
+                          {
+                            group.doctor
+                              .nama_dokter
+                          }
+                        </h2>
+
+                        <p className="text-sm text-slate-500">
+                          {
+                            group.doctor
+                              .spesialisasi
+                          }
+                        </p>
+
                       </div>
 
-                      {/* BOOK BUTTON */}
-                      <button
-                        onClick={() =>
-                          router.push(`/booking/${item.id_schedule}`)
-                        }
-                        className="bg-green-500 text-white px-3 py-1 rounded text-xs"
-                      >
-                        Pilih
-                      </button>
+                      <div className="text-right">
+
+                        <p className="text-xs text-slate-400">
+                          Total Jadwal
+                        </p>
+
+                        <p className="font-bold text-blue-600">
+                          {
+                            group
+                              .schedules
+                              .length
+                          }
+                        </p>
+
+                      </div>
+
                     </div>
-                  ))}
 
-                </div>
+                    {/* JADWAL */}
+                    <div className="flex flex-wrap gap-3 mt-5">
+
+                      {group.schedules.map(
+                        (item) => (
+                          <button
+                            key={
+                              item.id_schedule
+                            }
+                            onClick={() =>
+                              router.push(
+                                `/booking/${item.id_schedule}`
+                              )
+                            }
+                            className="rounded-2xl border border-blue-100 bg-blue-50 hover:bg-blue-100 transition-all p-4 text-left min-w-[220px]"
+                          >
+
+                            <p className="text-sm font-semibold text-slate-700">
+                              📅{" "}
+                              {new Date(
+                                item.tanggal
+                              ).toLocaleDateString(
+                                "id-ID",
+                                {
+                                  day: "numeric",
+                                  month:
+                                    "short",
+                                  year:
+                                    "numeric",
+                                }
+                              )}
+                            </p>
+
+                            <p className="text-sm text-slate-600 mt-1">
+                              ⏰{" "}
+                              {formatJam(
+                                item.jam_mulai
+                              )}{" "}
+                              -{" "}
+                              {formatJam(
+                                item.jam_selesai
+                              )}
+                            </p>
+
+                            <p className="text-xs text-slate-500 mt-2">
+                              🏥{" "}
+                              {
+                                item.room
+                                  ?.nama_room
+                              }{" "}
+                              • Lt.{" "}
+                              {
+                                item.room
+                                  ?.lantai
+                              }
+                            </p>
+
+                            <div className="mt-3 inline-flex px-3 py-1 rounded-xl bg-blue-600 text-white text-xs font-semibold">
+                              Pilih
+                            </div>
+
+                          </button>
+                        )
+                      )}
+
+                    </div>
+
+                  </div>
+                ))}
+
               </div>
-            ))}
 
-          </div>
-        )}
+              {/* PAGINATION */}
+              <div className="flex items-center justify-center gap-2 mt-8 flex-wrap">
 
-        {/* PAGINATION */}
-        {totalPage > 1 && (
-          <div className="flex justify-center mt-10 gap-2">
+                {/* PREV */}
+                <button
+                  disabled={page === 1}
+                  onClick={() =>
+                    setPage((prev) =>
+                      prev - 1
+                    )
+                  }
+                  className="px-4 py-2 rounded-xl border bg-white disabled:opacity-40"
+                >
+                  Prev
+                </button>
 
-            {Array.from({ length: totalPage }, (_, i) => (
-              <button
-                key={i}
-                onClick={() => {
-                  setPage(i + 1);
-                  fetchData(i + 1);
-                }}
-                className={`w-9 h-9 rounded ${
-                  page === i + 1
-                    ? "bg-blue-600 text-white"
-                    : "bg-white"
-                }`}
-              >
-                {i + 1}
-              </button>
-            ))}
+                {/* NUMBER */}
+                {Array.from({
+                  length: totalPage,
+                }).map((_, index) => {
+                  const pageNumber =
+                    index + 1;
 
-          </div>
-        )}
+                  return (
+                    <button
+                      key={pageNumber}
+                      onClick={() =>
+                        setPage(
+                          pageNumber
+                        )
+                      }
+                      className={`w-10 h-10 rounded-xl text-sm font-semibold transition ${
+                        page ===
+                        pageNumber
+                          ? "bg-blue-600 text-white"
+                          : "bg-white border"
+                      }`}
+                    >
+                      {pageNumber}
+                    </button>
+                  );
+                })}
+
+                {/* NEXT */}
+                <button
+                  disabled={
+                    page === totalPage
+                  }
+                  onClick={() =>
+                    setPage((prev) =>
+                      prev + 1
+                    )
+                  }
+                  className="px-4 py-2 rounded-xl border bg-white disabled:opacity-40"
+                >
+                  Next
+                </button>
+
+              </div>
+            </>
+          )}
 
       </div>
 

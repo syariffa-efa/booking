@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { prisma } from "../prisma";
+import { prisma } from "../prisma/client";
 
 //Bikin status booking
     const registrations_status = {

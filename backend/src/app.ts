@@ -9,7 +9,7 @@ import antrianRoutes from './routes/antrian';
 import scheduleRoutes from './routes/schedule';
 import insuranceRoute from "./routes/insurance";
 import registrationsRoutes from "./routes/riwayat";
-import { authMiddleware } from "./middleware/middleware";
+import { authMiddleware } from "./shared/middleware/auth.middleware";
 
 const app = express();
 

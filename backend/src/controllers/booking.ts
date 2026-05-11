@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { prisma } from "../prisma";
+import { prisma } from "../prisma/client";
 import { nanoid } from "nanoid";
 
 type BookingBody = {
@@ -30,9 +30,7 @@ export const createBooking = async (
       no_bpjs,
     } = req.body;
 
-    // ======================
     // VALIDASI INPUT
-    // ======================
     if (!scheduleId || !patient) {
       return res.status(400).json({
         success: false,
@@ -40,9 +38,7 @@ export const createBooking = async (
       });
     }
 
-    // ======================
-    // GET SCHEDULE
-    // ======================
+  // AMBIL SCHEDULE
     const schedule = await prisma.schedule.findUnique({
       where: { id_schedule: scheduleId },
       include: {
@@ -58,11 +54,8 @@ export const createBooking = async (
       });
     }
 
-    // ======================
     // HITUNG ANTRIAN HARI INI
-    // ======================
     const tanggal = new Date(schedule.tanggal);
-
     const start = new Date(tanggal);
     start.setHours(0, 0, 0, 0);
 
@@ -79,9 +72,7 @@ export const createBooking = async (
       },
     });
 
-    // ======================
     // CEK KUOTA
-    // ======================
     const kuota =
       id_insurance === 2
         ? schedule.kuota_bpjs
@@ -96,9 +87,7 @@ export const createBooking = async (
 
     const nomorUrut = totalAntrian + 1;
 
-    // ======================
-    // NOMOR ANTRIAN
-    // ======================
+   // NOMOR ANTRIAN
     const initials = schedule.doctor.nama_dokter
       .split(" ")
       .map((n) => n[0])
@@ -108,29 +97,25 @@ export const createBooking = async (
     const nomorFormatted = String(nomorUrut).padStart(3, "0");
     const nomor_antrian = `${initials}A${nomorFormatted}`;
 
-// ======================
-// KODE BOOKING (UNIQUE)
-// ======================
+// BIKIN KODE BOOKING 
 const yyyy = tanggal.getFullYear();
 const mm = String(tanggal.getMonth() + 1).padStart(2, "0");
 const dd = String(tanggal.getDate()).padStart(2, "0");
 
-// inisial dokter
+// DITAMBAH INISIAL DOKTER
 const dokterKode = schedule.doctor.nama_dokter
   .split(" ")
   .map((n) => n[0])
   .join("")
   .toUpperCase();
 
-// random unique
+// DAN HURUF RANDOM DR NANOID
 const randomCode = nanoid(4).toUpperCase();
-
+// HASIL AKHIR
 const kode_booking =
   `${dokterKode}-${yyyy}${mm}${dd}-${randomCode}`;
 
-    // ======================
-    // PATIENT (UPSERT SIMPLE)
-    // ======================
+    // CEK PATIENT
     const existingPatient = await prisma.patient.findFirst({
       where: { nik: patient.nik },
     });
@@ -141,9 +126,7 @@ const kode_booking =
         data: patient,
       }));
 
-    // ======================
-    // CREATE BOOKING
-    // ======================
+   // CREATE BOOKING
     const booking = await prisma.registrations.create({
       data: {
         id_patient: newPatient.id_patient,
@@ -166,9 +149,7 @@ const kode_booking =
       },
     });
 
-    // ======================
     // CREATE ANTRIAN
-    // ======================
     await prisma.antrian.create({
       data: {
         id_registration: booking.id_registration,
@@ -177,9 +158,7 @@ const kode_booking =
       },
     });
 
-    // ======================
-    // RESPONSE FINAL
-    // ======================
+   // RESPONSE
     return res.status(201).json({
       success: true,
       message: "Booking berhasil",
